@@ -43,7 +43,7 @@ k = dolfinx.fem.Constant(msh, 237e-6)  # thermal conductivity
 
 # Elements and functions spaces
 k = 2
-V_ue = basix.ufl.element("Lagrange", msh.basix_cell(), k, shape=(msh.geometry.dim,) ) # displacement finite element
+V_ue = basix.ufl.element("Lagrange", msh.basix_cell(), k-1, shape=(msh.geometry.dim,) ) # displacement finite element
 V_te = basix.ufl.element("Lagrange", msh.basix_cell(), k-1) # temperature finite element
 V_mi = basix.ufl.mixed_element([V_ue, V_te])
 V = dolfinx.fem.functionspace(msh, V_mi)
@@ -162,15 +162,16 @@ U = dolfinx.fem.Function(V)
 xdmf = dolfinx.io.XDMFFile(MPI.COMM_WORLD, "results_theromelasticity.xdmf","w")
 xdmf.write_mesh(msh)
 
+
 for (i, dti) in enumerate(np.diff(t)):
     print("Increment " + str(i+1)+str(' ')+str(t[i]))
     dt.value = dti
     Esh = problem.solve()
     uold.value = U
-    u, Theta = ufl.split(Esh)
+    u, Theta = Esh.split()
     xdmf.write_function(u,dti)
     xdmf.write_function(Theta,dti)
-
+xdmf.close()
     #T_res[:, i+1] = [U(xi, 0.0)[2] for xi in x]
 
 '''
